@@ -5,10 +5,11 @@ const levels = [
             "######",
             "#....#",
             "#.#..#",
-            "#..$+#",
+            "#..$@#",
             "#....#",
             "######"
         ],
+        targetPositions: [{x: 1, y: 1}, {x: 2, y: 1}],  // Position des cibles
         startPosition: { x: 3, y: 3 }
     },
     // Niveau 2
@@ -18,9 +19,10 @@ const levels = [
             "###.   #",
             "#.$.#  #",
             "#.#$.  #",
-            "#.+.####",
+            "#.@.####",
             "#####"
         ],
+        targetPositions: [{x: 1, y: 2}, {x: 3, y: 3}],
         startPosition: { x: 2, y: 4 }
     },
     // Niveau 3
@@ -32,16 +34,17 @@ const levels = [
             "#.$#...#",
             "#..$.###",
             "#.#...#",
-            "#+....#",
+            "#@....#",
             "########"
         ],
+        targetPositions: [{x: 1, y: 2}, {x: 3, y: 3}, {x: 3, y: 4}],
         startPosition: { x: 1, y: 6 }
     },
     // Niveau 4
     {
         map: [
             "########",
-            "#..+...#",
+            "#..@...#",
             "#.$$...#",
             "##.##..#",
             "#...#..#",
@@ -49,6 +52,7 @@ const levels = [
             "#...#..#",
             "########"
         ],
+        targetPositions: [{x: 1, y: 4}, {x: 2, y: 4}, {x: 3, y: 4}],
         startPosition: { x: 3, y: 1 }
     },
     // Niveau 5
@@ -60,18 +64,20 @@ const levels = [
             "#.$...#",
             "#.$.#.#",
             "#.$.#.#",
-            "#.+.#.#",
+            "#.@.#.#",
             "#######"
         ],
+        targetPositions: [{x: 5, y: 2}, {x: 5, y: 4}, {x: 5, y: 6}],
         startPosition: { x: 2, y: 6 }
     },
 ];
 
-// Légende:
+// Légende modifiée:
 // # = mur
 // . = sol
 // $ = caisse
-// * = caisse sur cible
-// + = joueur sur cible
 // @ = joueur
 // Espace = vide (non accessible)
+// 
+// Note: Les positions des cibles sont maintenant définies séparément 
+// dans targetPositions pour chaque niveau
