@@ -2,27 +2,43 @@
 const WALL = '#';
 const FLOOR = '.';
 const BOX = '$';
-const TARGET = '+';
-const BOX_ON_TARGET = '*';
 const PLAYER = '@';
-const PLAYER_ON_TARGET = '+';
+const EMPTY = ' ';
+const TARGET_CLASS = 'target';    // Classe CSS pour les cibles
+const BOX_CLASS = 'box';          // Classe CSS pour les caisses
+const BOX_ON_TARGET_CLASS = 'box-on-target'; // Classe CSS pour les caisses sur cible
+const PLAYER_CLASS = 'player';    // Classe CSS pour le joueur
 
 let currentLevel = 0;
 let playerPosition = { x: 0, y: 0 };
 let gameMap = [];
 let originalMap = [];
 let moveCount = 0;
+let targetPositions = [];  // Positions des cibles du niveau actuel
 
 // Éléments du DOM
-const gameBoard = document.getElementById('game-board');
-const levelDisplay = document.getElementById('level-display');
-const movesDisplay = document.getElementById('moves-display');
-const resetButton = document.getElementById('reset-btn');
-const prevLevelButton = document.getElementById('prev-level');
-const nextLevelButton = document.getElementById('next-level');
+let gameBoard;
+let levelDisplay;
+let movesDisplay;
+let resetButton;
+let prevLevelButton;
+let nextLevelButton;
 
 // Initialisation du jeu
 function initGame() {
+    // Récupérer les éléments du DOM
+    gameBoard = document.getElementById('game-board');
+    levelDisplay = document.getElementById('level-display');
+    movesDisplay = document.getElementById('moves-display');
+    resetButton = document.getElementById('reset-btn');
+    prevLevelButton = document.getElementById('prev-level');
+    nextLevelButton = document.getElementById('next-level');
+    
+    if (!gameBoard) {
+        console.error("Élément game-board introuvable!");
+        return;
+    }
+    
     loadLevel(currentLevel);
     
     // Écouteurs d'événements
@@ -30,6 +46,8 @@ function initGame() {
     resetButton.addEventListener('click', resetLevel);
     prevLevelButton.addEventListener('click', () => changeLevel(-1));
     nextLevelButton.addEventListener('click', () => changeLevel(1));
+    
+    console.log("Jeu initialisé avec succès!");
 }
 
 // Charger un niveau
@@ -40,11 +58,37 @@ function loadLevel(levelIndex) {
     
     currentLevel = levelIndex;
     moveCount = 0;
-    updateDisplay();
+    
+    // Récupérer les positions des cibles
+    targetPositions = [...levels[currentLevel].targetPositions];
     
     // Copier la carte du niveau
     originalMap = levels[currentLevel].map.map(row => row);
+    
+    // Valider le niveau
+    validateLevel();
+    
     resetLevel();
+    updateDisplay();
+}
+
+// Valider le niveau (vérifier l'équilibre caisses/cibles)
+function validateLevel() {
+    let boxCount = 0;
+    
+    for (let y = 0; y < originalMap.length; y++) {
+        for (let x = 0; x < originalMap[y].length; x++) {
+            if (originalMap[y][x] === BOX) {
+                boxCount++;
+            }
+        }
+    }
+    
+    if (boxCount !== targetPositions.length) {
+        console.warn(`AVERTISSEMENT: Le niveau ${currentLevel + 1} a ${boxCount} caisses mais ${targetPositions.length} cibles!`);
+    } else {
+        console.log(`Niveau ${currentLevel + 1} validé: ${boxCount} caisses et ${targetPositions.length} cibles`);
+    }
 }
 
 // Réinitialiser le niveau actuel
@@ -74,10 +118,22 @@ function changeLevel(direction) {
     }
 }
 
+// Vérifier si une position est une cible
+function isTarget(x, y) {
+    return targetPositions.some(pos => pos.x === x && pos.y === y);
+}
+
 // Rendre la carte du jeu
 function renderMap() {
     gameBoard.innerHTML = '';
-    gameBoard.style.gridTemplateColumns = `repeat(${getMaxWidth()}, 40px)`;
+    
+    // Calculer la largeur maximale
+    let maxWidth = 0;
+    for (const row of gameMap) {
+        maxWidth = Math.max(maxWidth, row.length);
+    }
+    
+    gameBoard.style.gridTemplateColumns = `repeat(${maxWidth}, 40px)`;
     
     for (let y = 0; y < gameMap.length; y++) {
         const row = gameMap[y];
@@ -86,6 +142,7 @@ function renderMap() {
             cell.classList.add('cell');
             
             const char = row[x];
+            const isTargetPos = isTarget(x, y);
             
             switch (char) {
                 case WALL:
@@ -93,46 +150,36 @@ function renderMap() {
                     break;
                 case FLOOR:
                     cell.classList.add('floor');
+                    if (isTargetPos) {
+                        cell.classList.add(TARGET_CLASS);
+                    }
                     break;
                 case BOX:
                     cell.classList.add('floor');
-                    cell.classList.add('box');
-                    break;
-                case TARGET:
-                    cell.classList.add('floor');
-                    cell.classList.add('target');
-                    break;
-                case BOX_ON_TARGET:
-                    cell.classList.add('floor');
-                    cell.classList.add('target');
-                    cell.classList.add('box-on-target');
+                    cell.classList.add(BOX_CLASS);
+                    if (isTargetPos) {
+                        cell.classList.add(TARGET_CLASS);
+                        cell.classList.add(BOX_ON_TARGET_CLASS);
+                    }
                     break;
                 case PLAYER:
-                case PLAYER_ON_TARGET:
-                    if (char === PLAYER_ON_TARGET) {
-                        cell.classList.add('target');
-                    } else {
-                        cell.classList.add('floor');
+                    cell.classList.add('floor');
+                    cell.classList.add(PLAYER_CLASS);
+                    if (isTargetPos) {
+                        cell.classList.add(TARGET_CLASS);
                     }
-                    cell.classList.add('player');
+                    break;
+                case EMPTY:
+                    // Espace vide, ne rien faire
                     break;
                 default:
-                    // Espace vide ou autre caractère
+                    cell.classList.add('floor');
                     break;
             }
             
             gameBoard.appendChild(cell);
         }
     }
-}
-
-// Obtenir la largeur maximale de la carte
-function getMaxWidth() {
-    let maxWidth = 0;
-    for (const row of gameMap) {
-        maxWidth = Math.max(maxWidth, row.length);
-    }
-    return maxWidth;
 }
 
 // Obtenir le caractère à une position spécifique
@@ -146,7 +193,7 @@ function getCharAt(x, y) {
 // Définir un caractère à une position spécifique
 function setCharAt(x, y, char) {
     if (y >= 0 && y < gameMap.length && x >= 0 && x < gameMap[y].length) {
-        // Convertir la chaîne en tableau pour modification
+        // On utilise le split/join pour modifier la chaîne de caractères
         const rowChars = gameMap[y].split('');
         rowChars[x] = char;
         gameMap[y] = rowChars.join('');
@@ -196,28 +243,26 @@ function movePlayer(dx, dy) {
     const newX = playerPosition.x + dx;
     const newY = playerPosition.y + dy;
     
-    const currentCell = getCharAt(playerPosition.x, playerPosition.y);
     const targetCell = getCharAt(newX, newY);
     
     if (!targetCell) return; // Hors limites
-    
     if (targetCell === WALL) return; // Ne peut pas traverser les murs
+    if (targetCell === EMPTY) return; // Ne peut pas aller dans l'espace vide
     
-    if (targetCell === BOX || targetCell === BOX_ON_TARGET) {
+    if (targetCell === BOX) {
         // Essayer de pousser la caisse
         const nextX = newX + dx;
         const nextY = newY + dy;
         const nextCell = getCharAt(nextX, nextY);
         
         // Vérifier si la caisse peut être poussée
-        if (nextCell === FLOOR || nextCell === TARGET) {
+        if (nextCell === FLOOR) {
             // Déplacer la caisse
-            setCharAt(nextX, nextY, nextCell === FLOOR ? BOX : BOX_ON_TARGET);
+            setCharAt(nextX, nextY, BOX);
             
             // Déplacer le joueur
-            setCharAt(newX, newY, targetCell === BOX_ON_TARGET ? PLAYER_ON_TARGET : PLAYER);
-            setCharAt(playerPosition.x, playerPosition.y, 
-                      currentCell === PLAYER_ON_TARGET ? TARGET : FLOOR);
+            setCharAt(newX, newY, PLAYER);
+            setCharAt(playerPosition.x, playerPosition.y, FLOOR);
             
             playerPosition.x = newX;
             playerPosition.y = newY;
@@ -230,9 +275,8 @@ function movePlayer(dx, dy) {
         }
     } else {
         // Déplacer le joueur normalement
-        setCharAt(newX, newY, targetCell === TARGET ? PLAYER_ON_TARGET : PLAYER);
-        setCharAt(playerPosition.x, playerPosition.y, 
-                  currentCell === PLAYER_ON_TARGET ? TARGET : FLOOR);
+        setCharAt(newX, newY, PLAYER);
+        setCharAt(playerPosition.x, playerPosition.y, FLOOR);
         
         playerPosition.x = newX;
         playerPosition.y = newY;
@@ -244,23 +288,28 @@ function movePlayer(dx, dy) {
 
 // Vérifier si le niveau est terminé
 function checkLevelComplete() {
-    // Le niveau est complet si toutes les cibles sont couvertes par des caisses
-    for (let y = 0; y < gameMap.length; y++) {
-        if (gameMap[y].includes(TARGET)) {
-            return; // Il reste des cibles non couvertes
+    // Compter combien de cibles sont couvertes par des caisses
+    let targetsCompleted = 0;
+    
+    for (const target of targetPositions) {
+        if (getCharAt(target.x, target.y) === BOX) {
+            targetsCompleted++;
         }
     }
     
-    // Afficher un message de victoire
-    setTimeout(() => {
-        if (currentLevel === levels.length - 1) {
-            alert(`Félicitations ! Vous avez terminé tous les niveaux en ${moveCount} déplacements !`);
-        } else {
-            alert(`Niveau ${currentLevel + 1} terminé en ${moveCount} déplacements !`);
-            // Passer au niveau suivant
-            changeLevel(1);
-        }
-    }, 300);
+    // Si toutes les cibles sont couvertes, le niveau est terminé
+    if (targetsCompleted === targetPositions.length) {
+        // Afficher un message de victoire
+        setTimeout(() => {
+            if (currentLevel === levels.length - 1) {
+                alert(`Félicitations ! Vous avez terminé tous les niveaux en ${moveCount} déplacements !`);
+            } else {
+                alert(`Niveau ${currentLevel + 1} terminé en ${moveCount} déplacements !`);
+                // Passer au niveau suivant
+                changeLevel(1);
+            }
+        }, 300);
+    }
 }
 
 // Initialiser le jeu au chargement
