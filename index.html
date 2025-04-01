@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sokoban</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>Sokoban</h1>
+            <div class="game-info">
+                <span id="level-display">Niveau: 1</span>
+                <span id="moves-display">Déplacements: 0</span>
+            </div>
+            <div class="controls">
+                <button id="reset-btn">Réinitialiser</button>
+                <button id="prev-level">Niveau précédent</button>
+                <button id="next-level">Niveau suivant</button>
+            </div>
+        </div>
+        <div id="game-board"></div>
+        <div class="instructions">
+            <h2>Instructions</h2>
+            <p>Utilisez les touches flèches ou ZQSD pour déplacer le personnage.</p>
+            <p>Poussez toutes les caisses sur les cibles pour compléter le niveau.</p>
+            <p>Appuyez sur R pour réinitialiser le niveau.</p>
+        </div>
+    </div>
+    <script src="levels.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
